@@ -37,6 +37,7 @@ dependencies:
   path_provider:
   uuid: ^3.0.5
   device_info_plus: ^3.2.1
+  csv: ^5.0.1
 
 
   # The following adds the Cupertino Icons font to your application.
