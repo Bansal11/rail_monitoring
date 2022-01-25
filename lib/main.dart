@@ -13,6 +13,7 @@ import 'dart:convert'; // for converting JSON
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
 import 'package:uuid/uuid.dart'; // for http headers
+import 'package:motion_sensors/motion_sensors.dart';
 
 void main() {
   runApp(MyApp());
@@ -96,9 +97,12 @@ class _MyHomePageState extends State<MyHomePage> {
     "tripId": "" // create random
   };
 
-  List<List<dynamic>> csvData = [];
+  int numberOfJerkCSVFiles = 1;
+  int numberOfDetailCSVFiles = 1;
+  List<List<dynamic>> csvJerkData = [];
+  List<List<dynamic>> csvDetailData = [];
 
-  Stream<geo.Position> get positionStream => geo.Geolocator().getPositionStream(new geo.LocationOptions(timeInterval: 1)).asBroadcastStream();
+  Stream<UserAccelerometerEvent> get positionStream => motionSensors.userAccelerometer.asBroadcastStream();
 
   @override
   void initState() {
@@ -132,14 +136,15 @@ class _MyHomePageState extends State<MyHomePage> {
                 endTime =  DateTime.now().toUtc().toString();
                 totalJerkRecordedData["endTime"] = endTime;
                 totalDetailedRecordedData["endTime"] = endTime;
-//                csvData.add(["endTime", endTime]);
+                csvJerkData.add(["endTime", endTime]);
 
 //              save recorded data in txt
-//                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-//                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
 
 //                save recorded data in csv
-//                writeCSVFile(tripId, startTime);
+                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
+                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
 
 //              reset for new journey
                 jerkCounter = 0;
@@ -155,42 +160,49 @@ class _MyHomePageState extends State<MyHomePage> {
                 time = 0;
                 startTime = "";
 
-
                 totalJerkRecordedData["xAxis"] = [];
                 totalJerkRecordedData["yAxis"] = [];
                 totalJerkRecordedData["zAxis"] = [];
                 totalJerkRecordedData["totalJerks"] = 0;
                 totalJerkRecordedData["totalTime"] = 0;
-                csvData = [];
 
                 totalDetailedRecordedData["xAxis"] = [];
                 totalDetailedRecordedData["yAxis"] = [];
                 totalDetailedRecordedData["zAxis"] = [];
                 totalDetailedRecordedData["totalJerks"] = 0;
                 totalDetailedRecordedData["totalTime"] = 0;
-                csvData = [];
+
+                csvJerkData = [];
+                csvDetailData = [];
 
               } else {
 //                check permission and get location
                 getCurrentLocationSMSPermission();
 
 //          journey started
+                numberOfJerkCSVFiles=1;
+                numberOfDetailCSVFiles =1;
                 startTime = DateTime.now().toUtc().toString();
                 //  generate random trip id
                 tripId = uuid.v1();
                 totalDetailedRecordedData["tripId"] = tripId;
                 totalDetailedRecordedData["startTime"] = startTime;
 
-                csvData.add(["tripId", tripId]);
-                csvData.add(["startTime", startTime]);
-
                 totalJerkRecordedData["tripId"] = tripId;
                 totalJerkRecordedData["startTime"] = startTime;
 
-//                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-//                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+                csvJerkData.add(["tripId", tripId]);
+                csvJerkData.add(["startTime", startTime]);
 
-//                writeCSVFile(tripId, startTime);
+                csvDetailData.add(["tripId", tripId]);
+                csvDetailData.add(["startTime", startTime]);
+
+                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+
+                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
+                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
+
               }
             });
           },
@@ -406,7 +418,7 @@ class _MyHomePageState extends State<MyHomePage> {
         xAxisJerk++;
         jerkCounter++;
 
-        totalJerkRecordedData["xAxis"].add({
+        var xAxisJerkRecord = {
           "jerkAxis": "X",
           "jerkId": xAxisJerk,
           "jerkValue": value,
@@ -416,7 +428,10 @@ class _MyHomePageState extends State<MyHomePage> {
           "jerkThreshold": xAxisThreshold,
           "latitude": currentCoordinates.latitude.toString(),
           "longitude": currentCoordinates.longitude.toString(),
-        });
+        };
+
+        totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
+        csvJerkData.add(["xAxis", xAxisJerkRecord]);
 
         sendMail({
           "jerkAxis": "X",
@@ -432,13 +447,14 @@ class _MyHomePageState extends State<MyHomePage> {
           "latitude": currentCoordinates.latitude.toString(),
           "longitude": currentCoordinates.longitude.toString(),
         });
+
         downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
       }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
-//      saving every reading from sensor
-      totalDetailedRecordedData["xAxis"].add({
+      var detailData = {
         "jerkAxis": "X",
         "jerkValue": value,
         "jerkGPSTimeInUTC": currentGPSTimeInUTC,
@@ -447,11 +463,16 @@ class _MyHomePageState extends State<MyHomePage> {
         "jerkThreshold": xAxisThreshold,
         "latitude": currentCoordinates.latitude.toString(),
         "longitude": currentCoordinates.longitude.toString(),
-      });
+      };
+
+//      saving every reading from sensor
+      totalDetailedRecordedData["xAxis"].add(detailData);
+      csvDetailData.add(["xAxis", detailData]);
 
 
       if(time % 6000 == 0){
         downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+        writeCSVFile("DETAIL", numberOfJerkCSVFiles, tripId, startTime);
       }
 
       return xChartData;
@@ -464,7 +485,8 @@ class _MyHomePageState extends State<MyHomePage> {
       if (value > yAxisThreshold) {
         yAxisJerk++;
         jerkCounter++;
-        totalJerkRecordedData["yAxis"].add({
+
+        var yAxisJerkData = {
           "jerkId": yAxisJerk,
           "jerkAxis": "Y",
           "jerkThreshold": yAxisThreshold,
@@ -474,7 +496,10 @@ class _MyHomePageState extends State<MyHomePage> {
           "jerkCurrentTimeInUTC": currentTimeInUTC,
           "latitude": currentCoordinates.latitude.toString(),
           "longitude": currentCoordinates.longitude.toString(),
-        });
+        };
+
+        totalJerkRecordedData["yAxis"].add(yAxisJerkData);
+        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
 
         sendMail({
           "jerkId": yAxisJerk.toString(),
@@ -619,16 +644,26 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-//  writeCSVFile(String tripId, String startTime ) async {
-//
-//    String csv = const ListToCsvConverter().convert(csvData);
-//    final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
-//    final File file = File('${directory.path}/' + tripId + '/jerkReport_' + tripId + '_' + startTime + ".txt");
-//    await file.writeAsString(csv);
-//  }
+  writeCSVFile(String type , int fileNumber, String tripId, String startTime ) async {
+
+//    new Directory('sensei-wa-koi-o-oshie-rarenai-chapter-7-bahasa-indonesia').create()
+//    // The created directory is returned as a Future.
+//        .then((Directory directory) {
+//      print(directory.path);
+//    });
+
+    String csv = type == "JERK" ? const ListToCsvConverter().convert(csvJerkData) : const ListToCsvConverter().convert(csvDetailData);
+    final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
+    final File file =
+    type == "JERK" ?
+    File('${directory.path}/' + tripId + '/jerkReport_' + tripId + '_' + startTime + "_" + '$numberOfJerkCSVFiles' + ".txt") :
+    File('${directory.path}/' + tripId + '/detailReport_' + tripId + '_' + startTime + "_" + '$numberOfDetailCSVFiles' + ".txt");
+
+    await file.writeAsString(csv);
+  }
 
   getCurrentLocation(){
-    geo.Geolocator().getPositionStream(new geo.LocationOptions(timeInterval: 1)).listen((position){
+    geo.Geolocator().getPositionStream(const geo.LocationOptions(timeInterval: 1)).listen((position){
       currentCoordinates = position;
       currentGPSTimeInUTC = DateTime.now().toUtc().toString();
     });
