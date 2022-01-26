@@ -104,6 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<List<dynamic>> csvDetailData = [];
 
   Stream<UserAccelerometerEvent> get positionStream => motionSensors.userAccelerometer.asBroadcastStream();
+  Stream<SensorEvent> sensorData;
 
   @override
   void initState() {
@@ -121,10 +122,31 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<Stream<SensorEvent>> getSensors(){
     return SensorManager().sensorUpdates(
       sensorId: Sensors.ACCELEROMETER,
-      interval: Sensors.SENSOR_DELAY_FASTEST,
+      interval: Duration(milliseconds: 1),
     ).then((value) {
+      sensorData = value;
       value.listen((event) {
-        print(event);
+        if(startRecoding){
+          time++;
+          updateXDataSource(event.data[0]);
+          updateYDataSource(event.data[1]);
+          updateZDataSource(event.data[2]);
+//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+//        if(jerkCounter % 20 == 0 && startRecoding){
+//          print("here");
+//          numberOfJerkCSVFiles++;
+//          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+//        }
+//
+          if(time % 60000 == 0){
+            print("created");
+            numberOfDetailCSVFiles++;
+//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+            writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
+          }
+
+        }
+
       });
      return value;
     });
@@ -348,39 +370,40 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget chart(SensorEvent streamedSensorData) {
     time++;
     currentTimeInUTC = DateTime.now().toUtc().toString();
-    return SfCartesianChart(
-        series: <LineSeries<LiveData, int>>[
-          LineSeries<LiveData, int>(
-            dataSource: updateDataSource( "X-Axis", streamedSensorData.data[0]),
-            color: const Color.fromRGBO(
-                192, 108, 132, 1),
-            xValueMapper: (LiveData sales, _) =>
-            sales.time,
-            yValueMapper: (LiveData sales, _) =>
-            sales.speed,
-          ),
-          LineSeries<LiveData, int>(
-              dataSource: updateDataSource( "Y-Axis", streamedSensorData.data[1]),
-              color: const Color.fromRGBO(
-                  192, 108, 132, 1),
-              xValueMapper: (LiveData sales, _) => sales.time,
-              yValueMapper: (LiveData sales, _) => sales.speed,
-              pointColorMapper: (_, color) => Colors.green
-          ),
-          LineSeries<LiveData, int>(
-              dataSource: updateDataSource("Z-Axis", streamedSensorData.data[2],),
-              color: const Color.fromRGBO(192, 108, 132, 1),
-              xValueMapper: (LiveData sales, _) => sales.time,
-              yValueMapper: (LiveData sales, _) => sales.speed,
-              pointColorMapper: (_, color) => Colors.blue
-          )
-        ],
-        primaryXAxis: NumericAxis(
-            majorGridLines: MajorGridLines(width: 0),
-            edgeLabelPlacement: EdgeLabelPlacement.shift,
-            interval: 3,
-            title: AxisTitle(text: 'Time (milliseconds)')),
-        primaryYAxis: NumericAxis(axisLine: const AxisLine(width: 0), interval: 10.0, visibleMinimum: -10, majorTickLines: const MajorTickLines(size: 0), title: AxisTitle(text: 'Jerk (g)')));
+    return Container();
+//      SfCartesianChart(
+//        series: <LineSeries<LiveData, int>>[
+//          LineSeries<LiveData, int>(
+//            dataSource: updateXDataSource(streamedSensorData.data[0]),
+//            color: const Color.fromRGBO(
+//                192, 108, 132, 1),
+//            xValueMapper: (LiveData sales, _) =>
+//            sales.time,
+//            yValueMapper: (LiveData sales, _) =>
+//            sales.speed,
+//          ),
+//          LineSeries<LiveData, int>(
+//              dataSource: updateYDataSource(streamedSensorData.data[1]),
+//              color: const Color.fromRGBO(
+//                  192, 108, 132, 1),
+//              xValueMapper: (LiveData sales, _) => sales.time,
+//              yValueMapper: (LiveData sales, _) => sales.speed,
+//              pointColorMapper: (_, color) => Colors.green
+//          ),
+//          LineSeries<LiveData, int>(
+//              dataSource: updateZDataSource(streamedSensorData.data[2],),
+//              color: const Color.fromRGBO(192, 108, 132, 1),
+//              xValueMapper: (LiveData sales, _) => sales.time,
+//              yValueMapper: (LiveData sales, _) => sales.speed,
+//              pointColorMapper: (_, color) => Colors.blue
+//          )
+//        ],
+//        primaryXAxis: NumericAxis(
+//            majorGridLines: MajorGridLines(width: 0),
+//            edgeLabelPlacement: EdgeLabelPlacement.shift,
+//            interval: 3,
+//            title: AxisTitle(text: 'Time (milliseconds)')),
+//        primaryYAxis: NumericAxis(axisLine: const AxisLine(width: 0), interval: 10.0, visibleMinimum: -10, majorTickLines: const MajorTickLines(size: 0), title: AxisTitle(text: 'Jerk (g)')));
   }
 
   Widget thresholdDialog(String axis){
@@ -421,142 +444,124 @@ class _MyHomePageState extends State<MyHomePage> {
     await SensorManager().isSensorAvailable(Sensors.ACCELEROMETER);
   }
 
-  List<LiveData> updateDataSource(String axis, double value) {
-    if(axis == "X-Axis") {
-      xChartData.add(LiveData(time = time+incrementTimeValue, value));
-      if (xChartData.length > 15) {
-        xChartData.removeAt(0);
-      }
-      if (value > xAxisThreshold) {
-        xAxisJerk++;
-        jerkCounter++;
+  updateXDataSource(double value){
+    xChartData.add(LiveData(time, value));
+    if (xChartData.length > 15) {
+      xChartData.removeAt(0);
+    }
+    if (value > xAxisThreshold) {
+      xAxisJerk++;
+      jerkCounter++;
 
-        var xAxisJerkRecord = {
-          "jerkAxis": "X",
-          "jerkId": xAxisJerk,
-          "jerkValue": value,
-          "jerkTime": time,
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "jerkThreshold": xAxisThreshold,
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        };
-
-        totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
-
-        sendMail({
-          "jerkAxis": "X",
-          "jerkId": xAxisJerk.toString(),
-          "jerkValue": value.toString(),
-          "jerkTime": time.toString(),
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "modelName": totalJerkRecordedData["modelName"].toString(),
-          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-          "tripId": tripId.toString(),
-          "jerkThreshold": xAxisThreshold.toString(),
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        });
-
-//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-        if(jerkCounter % 20 == 0){
-          numberOfJerkCSVFiles++;
-          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-        }
-        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-      }
-      totalJerkRecordedData["totalJerks"] = jerkCounter;
-      totalJerkRecordedData["totalTime"] = time;
-
-      var detailData = {
+      var xAxisJerkRecord = {
         "jerkAxis": "X",
+        "jerkId": xAxisJerk,
         "jerkValue": value,
-        "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-        "jerkCurrentTimeInUTC": currentTimeInUTC,
         "jerkTime": time,
+        "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+        "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
         "jerkThreshold": xAxisThreshold,
         "latitude": currentCoordinates.latitude.toString(),
         "longitude": currentCoordinates.longitude.toString(),
       };
 
+      totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
+
+      sendMail({
+        "jerkAxis": "X",
+        "jerkId": xAxisJerk.toString(),
+        "jerkValue": value.toString(),
+        "jerkTime": time.toString(),
+        "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+        "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
+        "modelName": totalJerkRecordedData["modelName"].toString(),
+        "deviceId": totalJerkRecordedData["deviceId"].toString(),
+        "tripId": tripId.toString(),
+        "jerkThreshold": xAxisThreshold.toString(),
+        "latitude": currentCoordinates.latitude.toString(),
+        "longitude": currentCoordinates.longitude.toString(),
+      });
+     }
+    totalJerkRecordedData["totalJerks"] = jerkCounter;
+    totalJerkRecordedData["totalTime"] = time;
+
+    var detailData = {
+      "jerkAxis": "X",
+      "jerkValue": value,
+      "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+      "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
+      "jerkTime": time,
+      "jerkThreshold": xAxisThreshold,
+      "latitude": currentCoordinates.latitude.toString(),
+      "longitude": currentCoordinates.longitude.toString(),
+    };
+
 //      saving every reading from sensor
-      totalDetailedRecordedData["xAxis"].add(detailData);
-      if(time % 6000 == 0){
-        numberOfDetailCSVFiles++;
-//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
-        writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
-      }
+    totalDetailedRecordedData["xAxis"].add(detailData);
 
-      return xChartData;
+    return xChartData;
 
-    } else if(axis == "Y-Axis") {
-      yChartData.add(LiveData(time = time+incrementTimeValue, value));
-      if (yChartData.length > 15) {
-        yChartData.removeAt(0);
-      }
-      if (value > yAxisThreshold) {
-        yAxisJerk++;
-        jerkCounter++;
+  }
 
-        var yAxisJerkData = {
-          "jerkId": yAxisJerk,
-          "jerkAxis": "Y",
-          "jerkThreshold": yAxisThreshold,
-          "jerkValue": value,
-          "jerkTime": time,
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        };
+  List<LiveData> updateYDataSource(double value) {
+    yChartData.add(LiveData(time, value));
+    if (yChartData.length > 15) {
+      yChartData.removeAt(0);
+    }
+    if (value > yAxisThreshold) {
+      yAxisJerk++;
+      jerkCounter++;
 
-        totalJerkRecordedData["yAxis"].add(yAxisJerkData);
-
-        sendMail({
-          "jerkId": yAxisJerk.toString(),
-          "jerkAxis": "Y",
-          "jerkThreshold": yAxisThreshold.toString(),
-          "jerkValue": value.toString(),
-          "jerkTime": time.toString(),
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "modelName": totalJerkRecordedData["modelName"].toString(),
-          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-          "tripId": totalJerkRecordedData["tripId"].toString(),
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        });
-
-//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-        if(jerkCounter % 20 == 0){
-          numberOfJerkCSVFiles++;
-          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-        }
-      }
-      totalJerkRecordedData["totalJerks"] = jerkCounter;
-      totalJerkRecordedData["totalTime"] = time;
-
-      totalDetailedRecordedData["yAxis"].add({
+      var yAxisJerkData = {
+        "jerkId": yAxisJerk,
         "jerkAxis": "Y",
         "jerkThreshold": yAxisThreshold,
         "jerkValue": value,
         "jerkTime": time,
         "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-        "jerkCurrentTimeInUTC": currentTimeInUTC,
+        "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
+        "latitude": currentCoordinates.latitude.toString(),
+        "longitude": currentCoordinates.longitude.toString(),
+      };
+
+      totalJerkRecordedData["yAxis"].add(yAxisJerkData);
+
+      sendMail({
+        "jerkId": yAxisJerk.toString(),
+        "jerkAxis": "Y",
+        "jerkThreshold": yAxisThreshold.toString(),
+        "jerkValue": value.toString(),
+        "jerkTime": time.toString(),
+        "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+        "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
+        "modelName": totalJerkRecordedData["modelName"].toString(),
+        "deviceId": totalJerkRecordedData["deviceId"].toString(),
+        "tripId": totalJerkRecordedData["tripId"].toString(),
         "latitude": currentCoordinates.latitude.toString(),
         "longitude": currentCoordinates.longitude.toString(),
       });
 
-      if(time % 6000 == 0){
-//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
-        numberOfDetailCSVFiles++;
-        writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
-      }
-      return yChartData;
-    } else {
-      zChartData.add(LiveData(time = time+incrementTimeValue, value));
+    }
+    totalJerkRecordedData["totalJerks"] = jerkCounter;
+    totalJerkRecordedData["totalTime"] = time;
+
+    totalDetailedRecordedData["yAxis"].add({
+      "jerkAxis": "Y",
+      "jerkThreshold": yAxisThreshold,
+      "jerkValue": value,
+      "jerkTime": time,
+      "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+      "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
+      "latitude": currentCoordinates.latitude.toString(),
+      "longitude": currentCoordinates.longitude.toString(),
+    });
+
+
+    return yChartData;
+  }
+
+    List<LiveData> updateZDataSource(double value) {
+      zChartData.add(LiveData(time, value));
       if (zChartData.length > 15) {
         zChartData.removeAt(0);
       }
@@ -569,7 +574,7 @@ class _MyHomePageState extends State<MyHomePage> {
           "jerkValue": value,
           "jerkTime": time,
           "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
           "jerkThreshold": zAxisThreshold,
           "latitude": currentCoordinates.latitude.toString(),
           "longitude": currentCoordinates.longitude.toString(),
@@ -581,7 +586,7 @@ class _MyHomePageState extends State<MyHomePage> {
           "jerkValue": value.toString(),
           "jerkTime": time.toString(),
           "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
           "modelName": totalJerkRecordedData["modelName"].toString(),
           "deviceId": totalJerkRecordedData["deviceId"].toString(),
           "tripId": tripId.toString(),
@@ -590,11 +595,6 @@ class _MyHomePageState extends State<MyHomePage> {
           "longitude": currentCoordinates.longitude.toString(),
         });
 
-//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-        if(jerkCounter % 20 == 0){
-          numberOfJerkCSVFiles++;
-          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-        }
       }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
@@ -604,19 +604,14 @@ class _MyHomePageState extends State<MyHomePage> {
         "jerkValue": value,
         "jerkTime": time,
         "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-        "jerkCurrentTimeInUTC": currentTimeInUTC,
+        "jerkCurrentTimeInUTC": DateTime.now().toUtc().toString(),
         "jerkThreshold": zAxisThreshold,
         "latitude": currentCoordinates.latitude.toString(),
         "longitude": currentCoordinates.longitude.toString(),
       });
 
-      if(time % 6000 == 0){
-//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
-        numberOfDetailCSVFiles++;
-        writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
-      }
       return zChartData;
-    }
+
   }
 
   getDeviceInfo() async {
