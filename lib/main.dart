@@ -118,6 +118,18 @@ class _MyHomePageState extends State<MyHomePage> {
   getDeviceInfo();
   }
 
+  Future<Stream<SensorEvent>> getSensors(){
+    return SensorManager().sensorUpdates(
+      sensorId: Sensors.ACCELEROMETER,
+      interval: Sensors.SENSOR_DELAY_FASTEST,
+    ).then((value) {
+      value.listen((event) {
+        print(event);
+      });
+     return value;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setPreferredOrientations([
@@ -144,8 +156,10 @@ class _MyHomePageState extends State<MyHomePage> {
 //                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
 
 //                save recorded data in csv
-//                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
-//                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
+                numberOfDetailCSVFiles++;
+                numberOfJerkCSVFiles++;
+                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
+                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
 
 //              reset for new journey
                 jerkCounter = 0;
@@ -212,10 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
           title: const Center(child: Text("Rail Track Monitoring System")),
         ),
         body: FutureBuilder(
-            future: SensorManager().sensorUpdates(
-              sensorId: Sensors.ACCELEROMETER,
-              interval: Sensors.SENSOR_DELAY_FASTEST,
-            ),
+            future: getSensors(),
             builder: (context, AsyncSnapshot<Stream<SensorEvent>> sensorData) {
               return sensorData.data == null
                   ? Container()
@@ -663,23 +674,40 @@ class _MyHomePageState extends State<MyHomePage> {
   writeCSVFile(String type , int fileNumber, String tripId, String startTime ) async {
     if(type == "JERK"){
       csvJerkData = [];
-      csvJerkData.add(["xAxis", ...totalJerkRecordedData["xAxis"]]);
-      csvJerkData.add(["yAxis", ...totalJerkRecordedData["yAxis"]]);
-      csvJerkData.add(["zAxis", ...totalJerkRecordedData["zAxis"]]);
-      csvJerkData.add(["modelName", totalJerkRecordedData["modelName"]]);
-      csvJerkData.add(["deviceId", totalJerkRecordedData["deviceId"]]);
-      csvJerkData.add(["tripId", totalJerkRecordedData["tripId"]]);
+
+      csvJerkData.add(["jerkAxis", "jerkValue", "jerkGPSTimeInUTC", "jerkCurrentTimeInUTC", "jerkTime", "jerkThreshold", "latitude", "longitude", "modelName", "deviceId", "tripId"]);
+
+      totalJerkRecordedData["xAxis"].forEach((value){
+        csvJerkData.add([value["jerkAxis"], value["jerkValue"], value["jerkGPSTimeInUTC"], value["jerkCurrentTimeInUTC"], value["jerkTime"], value["jerkThreshold"], value["latitude"], value["longitude"], totalJerkRecordedData["modelName"], totalJerkRecordedData["deviceId"], totalJerkRecordedData["tripId"]]);
+      });
+
+      totalJerkRecordedData["yAxis"].forEach((value){
+        csvJerkData.add([value["jerkAxis"], value["jerkValue"], value["jerkGPSTimeInUTC"], value["jerkCurrentTimeInUTC"], value["jerkTime"], value["jerkThreshold"], value["latitude"], value["longitude"], totalJerkRecordedData["modelName"], totalJerkRecordedData["deviceId"], totalJerkRecordedData["tripId"]]);
+      });
+
+      totalJerkRecordedData["zAxis"].forEach((value){
+        csvJerkData.add([value["jerkAxis"], value["jerkValue"], value["jerkGPSTimeInUTC"], value["jerkCurrentTimeInUTC"], value["jerkTime"], value["jerkThreshold"], value["latitude"], value["longitude"], totalJerkRecordedData["modelName"], totalJerkRecordedData["deviceId"], totalJerkRecordedData["tripId"]]);
+      });
+
       totalJerkRecordedData["xAxis"] = [];
       totalJerkRecordedData["yAxis"] = [];
       totalJerkRecordedData["zAxis"] = [];
     } else {
       csvDetailData = [];
-      csvDetailData.add(["xAxis", ...totalDetailedRecordedData["xAxis"]]);
-      csvDetailData.add(["yAxis", ...totalDetailedRecordedData["yAxis"]]);
-      csvDetailData.add(["zAxis", ...totalDetailedRecordedData["zAxis"]]);
-      csvDetailData.add(["modelName", totalDetailedRecordedData["modelName"]]);
-      csvDetailData.add(["deviceId", totalDetailedRecordedData["deviceId"]]);
-      csvDetailData.add(["tripId", totalDetailedRecordedData["tripId"]]);
+      csvDetailData.add(["jerkAxis", "jerkValue", "jerkGPSTimeInUTC", "jerkCurrentTimeInUTC", "jerkTime", "jerkThreshold", "latitude", "longitude", "modelName", "deviceId", "tripId"]);
+
+      totalDetailedRecordedData["xAxis"].forEach((value){
+        csvDetailData.add([value["jerkAxis"], value["jerkValue"], value["jerkGPSTimeInUTC"], value["jerkCurrentTimeInUTC"], value["jerkTime"], value["jerkThreshold"], value["latitude"], value["longitude"], totalJerkRecordedData["modelName"], totalJerkRecordedData["deviceId"], totalJerkRecordedData["tripId"]]);
+      });
+
+      totalDetailedRecordedData["yAxis"].forEach((value){
+        csvDetailData.add([value["jerkAxis"], value["jerkValue"], value["jerkGPSTimeInUTC"], value["jerkCurrentTimeInUTC"], value["jerkTime"], value["jerkThreshold"], value["latitude"], value["longitude"], totalJerkRecordedData["modelName"], totalJerkRecordedData["deviceId"], totalJerkRecordedData["tripId"]]);
+      });
+
+      totalDetailedRecordedData["zAxis"].forEach((value){
+        csvDetailData.add([value["jerkAxis"], value["jerkValue"], value["jerkGPSTimeInUTC"], value["jerkCurrentTimeInUTC"], value["jerkTime"], value["jerkThreshold"], value["latitude"], value["longitude"], totalJerkRecordedData["modelName"], totalJerkRecordedData["deviceId"], totalJerkRecordedData["tripId"]]);
+      });
+
       totalDetailedRecordedData["xAxis"] = [];
       totalDetailedRecordedData["yAxis"] = [];
       totalDetailedRecordedData["zAxis"] = [];
