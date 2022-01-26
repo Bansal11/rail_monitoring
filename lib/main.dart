@@ -51,6 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
   var uuid = const Uuid();
   Map<String, dynamic> deviceData;
   static final DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+  String savingCSVDirectory = "";
   String startTime;
   String endTime;
   String tripId;
@@ -139,8 +140,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 csvJerkData.add(["endTime", endTime]);
 
 //              save recorded data in txt
-                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+//                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+//                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
 
 //                save recorded data in csv
 //                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
@@ -197,11 +198,11 @@ class _MyHomePageState extends State<MyHomePage> {
                 csvDetailData.add(["tripId", tripId]);
                 csvDetailData.add(["startTime", startTime]);
 
-                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+//                downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+//                downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
 
-//                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
-//                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
+                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
+                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
 
               }
             });
@@ -335,45 +336,40 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget chart(SensorEvent streamedSensorData) {
     time++;
-    print(time);
     currentTimeInUTC = DateTime.now().toUtc().toString();
-    updateDataSource( "X-Axis", streamedSensorData.data[0]);
-    updateDataSource( "Y-Axis", streamedSensorData.data[1]);
-    updateDataSource("Z-Axis", streamedSensorData.data[2],);
-    return Container();
-//    return SfCartesianChart(
-//        series: <LineSeries<LiveData, int>>[
-//          LineSeries<LiveData, int>(
-//            dataSource: updateDataSource( "X-Axis", streamedSensorData.data[0]),
-//            color: const Color.fromRGBO(
-//                192, 108, 132, 1),
-//            xValueMapper: (LiveData sales, _) =>
-//            sales.time,
-//            yValueMapper: (LiveData sales, _) =>
-//            sales.speed,
-//          ),
-//          LineSeries<LiveData, int>(
-//              dataSource: updateDataSource( "Y-Axis", streamedSensorData.data[1]),
-//              color: const Color.fromRGBO(
-//                  192, 108, 132, 1),
-//              xValueMapper: (LiveData sales, _) => sales.time,
-//              yValueMapper: (LiveData sales, _) => sales.speed,
-//              pointColorMapper: (_, color) => Colors.green
-//          ),
-//          LineSeries<LiveData, int>(
-//              dataSource: updateDataSource("Z-Axis", streamedSensorData.data[2],),
-//              color: const Color.fromRGBO(192, 108, 132, 1),
-//              xValueMapper: (LiveData sales, _) => sales.time,
-//              yValueMapper: (LiveData sales, _) => sales.speed,
-//              pointColorMapper: (_, color) => Colors.blue
-//          )
-//        ],
-//        primaryXAxis: NumericAxis(
-//            majorGridLines: MajorGridLines(width: 0),
-//            edgeLabelPlacement: EdgeLabelPlacement.shift,
-//            interval: 3,
-//            title: AxisTitle(text: 'Time (milliseconds)')),
-//        primaryYAxis: NumericAxis(axisLine: const AxisLine(width: 0), interval: 10.0, visibleMinimum: -10, majorTickLines: const MajorTickLines(size: 0), title: AxisTitle(text: 'Jerk (g)')));
+    return SfCartesianChart(
+        series: <LineSeries<LiveData, int>>[
+          LineSeries<LiveData, int>(
+            dataSource: updateDataSource( "X-Axis", streamedSensorData.data[0]),
+            color: const Color.fromRGBO(
+                192, 108, 132, 1),
+            xValueMapper: (LiveData sales, _) =>
+            sales.time,
+            yValueMapper: (LiveData sales, _) =>
+            sales.speed,
+          ),
+          LineSeries<LiveData, int>(
+              dataSource: updateDataSource( "Y-Axis", streamedSensorData.data[1]),
+              color: const Color.fromRGBO(
+                  192, 108, 132, 1),
+              xValueMapper: (LiveData sales, _) => sales.time,
+              yValueMapper: (LiveData sales, _) => sales.speed,
+              pointColorMapper: (_, color) => Colors.green
+          ),
+          LineSeries<LiveData, int>(
+              dataSource: updateDataSource("Z-Axis", streamedSensorData.data[2],),
+              color: const Color.fromRGBO(192, 108, 132, 1),
+              xValueMapper: (LiveData sales, _) => sales.time,
+              yValueMapper: (LiveData sales, _) => sales.speed,
+              pointColorMapper: (_, color) => Colors.blue
+          )
+        ],
+        primaryXAxis: NumericAxis(
+            majorGridLines: MajorGridLines(width: 0),
+            edgeLabelPlacement: EdgeLabelPlacement.shift,
+            interval: 3,
+            title: AxisTitle(text: 'Time (milliseconds)')),
+        primaryYAxis: NumericAxis(axisLine: const AxisLine(width: 0), interval: 10.0, visibleMinimum: -10, majorTickLines: const MajorTickLines(size: 0), title: AxisTitle(text: 'Jerk (g)')));
   }
 
   Widget thresholdDialog(String axis){
@@ -416,47 +412,50 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<LiveData> updateDataSource(String axis, double value) {
     if(axis == "X-Axis") {
-//      xChartData.add(LiveData(time = time+incrementTimeValue, value));
-//      if (xChartData.length > 15) {
-//        xChartData.removeAt(0);
-//      }
-//      if (value > xAxisThreshold) {
-//        xAxisJerk++;
-//        jerkCounter++;
-//
-//        var xAxisJerkRecord = {
-//          "jerkAxis": "X",
-//          "jerkId": xAxisJerk,
-//          "jerkValue": value,
-//          "jerkTime": time,
-//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-//          "jerkCurrentTimeInUTC": currentTimeInUTC,
-//          "jerkThreshold": xAxisThreshold,
-//          "latitude": currentCoordinates.latitude.toString(),
-//          "longitude": currentCoordinates.longitude.toString(),
-//        };
-//
-//        totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
-//        csvJerkData.add(["xAxis", xAxisJerkRecord]);
-//
-//        sendMail({
-//          "jerkAxis": "X",
-//          "jerkId": xAxisJerk.toString(),
-//          "jerkValue": value.toString(),
-//          "jerkTime": time.toString(),
-//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-//          "jerkCurrentTimeInUTC": currentTimeInUTC,
-//          "modelName": totalJerkRecordedData["modelName"].toString(),
-//          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-//          "tripId": tripId.toString(),
-//          "jerkThreshold": xAxisThreshold.toString(),
-//          "latitude": currentCoordinates.latitude.toString(),
-//          "longitude": currentCoordinates.longitude.toString(),
-//        });
-//
+      xChartData.add(LiveData(time = time+incrementTimeValue, value));
+      if (xChartData.length > 15) {
+        xChartData.removeAt(0);
+      }
+      if (value > xAxisThreshold) {
+        xAxisJerk++;
+        jerkCounter++;
+
+        var xAxisJerkRecord = {
+          "jerkAxis": "X",
+          "jerkId": xAxisJerk,
+          "jerkValue": value,
+          "jerkTime": time,
+          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "jerkThreshold": xAxisThreshold,
+          "latitude": currentCoordinates.latitude.toString(),
+          "longitude": currentCoordinates.longitude.toString(),
+        };
+
+        totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
+
+        sendMail({
+          "jerkAxis": "X",
+          "jerkId": xAxisJerk.toString(),
+          "jerkValue": value.toString(),
+          "jerkTime": time.toString(),
+          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "modelName": totalJerkRecordedData["modelName"].toString(),
+          "deviceId": totalJerkRecordedData["deviceId"].toString(),
+          "tripId": tripId.toString(),
+          "jerkThreshold": xAxisThreshold.toString(),
+          "latitude": currentCoordinates.latitude.toString(),
+          "longitude": currentCoordinates.longitude.toString(),
+        });
+
 //        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-//        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-//      }
+        if(jerkCounter % 20 == 0){
+          numberOfJerkCSVFiles++;
+          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+        }
+        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+      }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
@@ -473,55 +472,58 @@ class _MyHomePageState extends State<MyHomePage> {
 
 //      saving every reading from sensor
       totalDetailedRecordedData["xAxis"].add(detailData);
-//      csvDetailData.add(["xAxis", detailData]);
-
       if(time % 6000 == 0){
-        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
-//        writeCSVFile("DETAIL", numberOfJerkCSVFiles, tripId, startTime);
+        numberOfDetailCSVFiles++;
+//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+        writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
       }
 
       return xChartData;
 
     } else if(axis == "Y-Axis") {
-//      yChartData.add(LiveData(time = time+incrementTimeValue, value));
-//      if (yChartData.length > 15) {
-//        yChartData.removeAt(0);
-//      }
-//      if (value > yAxisThreshold) {
-//        yAxisJerk++;
-//        jerkCounter++;
-//
-//        var yAxisJerkData = {
-//          "jerkId": yAxisJerk,
-//          "jerkAxis": "Y",
-//          "jerkThreshold": yAxisThreshold,
-//          "jerkValue": value,
-//          "jerkTime": time,
-//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-//          "jerkCurrentTimeInUTC": currentTimeInUTC,
-//          "latitude": currentCoordinates.latitude.toString(),
-//          "longitude": currentCoordinates.longitude.toString(),
-//        };
-//
-//        totalJerkRecordedData["yAxis"].add(yAxisJerkData);
-//        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-//
-//        sendMail({
-//          "jerkId": yAxisJerk.toString(),
-//          "jerkAxis": "Y",
-//          "jerkThreshold": yAxisThreshold.toString(),
-//          "jerkValue": value.toString(),
-//          "jerkTime": time.toString(),
-//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-//          "jerkCurrentTimeInUTC": currentTimeInUTC,
-//          "modelName": totalJerkRecordedData["modelName"].toString(),
-//          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-//          "tripId": totalJerkRecordedData["tripId"].toString(),
-//          "latitude": currentCoordinates.latitude.toString(),
-//          "longitude": currentCoordinates.longitude.toString(),
-//        });
+      yChartData.add(LiveData(time = time+incrementTimeValue, value));
+      if (yChartData.length > 15) {
+        yChartData.removeAt(0);
+      }
+      if (value > yAxisThreshold) {
+        yAxisJerk++;
+        jerkCounter++;
+
+        var yAxisJerkData = {
+          "jerkId": yAxisJerk,
+          "jerkAxis": "Y",
+          "jerkThreshold": yAxisThreshold,
+          "jerkValue": value,
+          "jerkTime": time,
+          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "latitude": currentCoordinates.latitude.toString(),
+          "longitude": currentCoordinates.longitude.toString(),
+        };
+
+        totalJerkRecordedData["yAxis"].add(yAxisJerkData);
+
+        sendMail({
+          "jerkId": yAxisJerk.toString(),
+          "jerkAxis": "Y",
+          "jerkThreshold": yAxisThreshold.toString(),
+          "jerkValue": value.toString(),
+          "jerkTime": time.toString(),
+          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "modelName": totalJerkRecordedData["modelName"].toString(),
+          "deviceId": totalJerkRecordedData["deviceId"].toString(),
+          "tripId": totalJerkRecordedData["tripId"].toString(),
+          "latitude": currentCoordinates.latitude.toString(),
+          "longitude": currentCoordinates.longitude.toString(),
+        });
+
 //        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-//      }
+        if(jerkCounter % 20 == 0){
+          numberOfJerkCSVFiles++;
+          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+        }
+      }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
@@ -537,46 +539,52 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       if(time % 6000 == 0){
-        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+        numberOfDetailCSVFiles++;
+        writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
       }
       return yChartData;
     } else {
-//      zChartData.add(LiveData(time = time+incrementTimeValue, value));
-//      if (zChartData.length > 15) {
-//        zChartData.removeAt(0);
-//      }
-//      if (value > zAxisThreshold) {
-//        zAxisJerk++;
-//        jerkCounter++;
-//        totalJerkRecordedData["zAxis"].add({
-//          "jerkId": zAxisJerk,
-//          "jerkAxis": "Z",
-//          "jerkValue": value,
-//          "jerkTime": time,
-//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-//          "jerkCurrentTimeInUTC": currentTimeInUTC,
-//          "jerkThreshold": zAxisThreshold,
-//          "latitude": currentCoordinates.latitude.toString(),
-//          "longitude": currentCoordinates.longitude.toString(),
-//        });
-//
-//        sendMail({
-//          "jerkId": zAxisJerk.toString(),
-//          "jerkAxis": "Z",
-//          "jerkValue": value.toString(),
-//          "jerkTime": time.toString(),
-//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-//          "jerkCurrentTimeInUTC": currentTimeInUTC,
-//          "modelName": totalJerkRecordedData["modelName"].toString(),
-//          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-//          "tripId": tripId.toString(),
-//          "jerkThreshold": zAxisThreshold.toString(),
-//          "latitude": currentCoordinates.latitude.toString(),
-//          "longitude": currentCoordinates.longitude.toString(),
-//        });
-//
+      zChartData.add(LiveData(time = time+incrementTimeValue, value));
+      if (zChartData.length > 15) {
+        zChartData.removeAt(0);
+      }
+      if (value > zAxisThreshold) {
+        zAxisJerk++;
+        jerkCounter++;
+        totalJerkRecordedData["zAxis"].add({
+          "jerkId": zAxisJerk,
+          "jerkAxis": "Z",
+          "jerkValue": value,
+          "jerkTime": time,
+          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "jerkThreshold": zAxisThreshold,
+          "latitude": currentCoordinates.latitude.toString(),
+          "longitude": currentCoordinates.longitude.toString(),
+        });
+
+        sendMail({
+          "jerkId": zAxisJerk.toString(),
+          "jerkAxis": "Z",
+          "jerkValue": value.toString(),
+          "jerkTime": time.toString(),
+          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+          "jerkCurrentTimeInUTC": currentTimeInUTC,
+          "modelName": totalJerkRecordedData["modelName"].toString(),
+          "deviceId": totalJerkRecordedData["deviceId"].toString(),
+          "tripId": tripId.toString(),
+          "jerkThreshold": zAxisThreshold.toString(),
+          "latitude": currentCoordinates.latitude.toString(),
+          "longitude": currentCoordinates.longitude.toString(),
+        });
+
 //        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-//      }
+        if(jerkCounter % 20 == 0){
+          numberOfJerkCSVFiles++;
+          writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+        }
+      }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
@@ -592,7 +600,9 @@ class _MyHomePageState extends State<MyHomePage> {
       });
 
       if(time % 6000 == 0){
-        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+//        downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
+        numberOfDetailCSVFiles++;
+        writeCSVFile("DETAIL", numberOfDetailCSVFiles, tripId, startTime);
       }
       return zChartData;
     }
@@ -651,19 +661,44 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   writeCSVFile(String type , int fileNumber, String tripId, String startTime ) async {
-
-//    new Directory('sensei-wa-koi-o-oshie-rarenai-chapter-7-bahasa-indonesia').create()
-//    // The created directory is returned as a Future.
-//        .then((Directory directory) {
-//      print(directory.path);
-//    });
+    if(type == "JERK"){
+      csvJerkData = [];
+      csvJerkData.add(["xAxis", ...totalJerkRecordedData["xAxis"]]);
+      csvJerkData.add(["yAxis", ...totalJerkRecordedData["yAxis"]]);
+      csvJerkData.add(["zAxis", ...totalJerkRecordedData["zAxis"]]);
+      csvJerkData.add(["modelName", totalJerkRecordedData["modelName"]]);
+      csvJerkData.add(["deviceId", totalJerkRecordedData["deviceId"]]);
+      csvJerkData.add(["tripId", totalJerkRecordedData["tripId"]]);
+      totalJerkRecordedData["xAxis"] = [];
+      totalJerkRecordedData["yAxis"] = [];
+      totalJerkRecordedData["zAxis"] = [];
+    } else {
+      csvDetailData = [];
+      csvDetailData.add(["xAxis", ...totalDetailedRecordedData["xAxis"]]);
+      csvDetailData.add(["yAxis", ...totalDetailedRecordedData["yAxis"]]);
+      csvDetailData.add(["zAxis", ...totalDetailedRecordedData["zAxis"]]);
+      csvDetailData.add(["modelName", totalDetailedRecordedData["modelName"]]);
+      csvDetailData.add(["deviceId", totalDetailedRecordedData["deviceId"]]);
+      csvDetailData.add(["tripId", totalDetailedRecordedData["tripId"]]);
+      totalDetailedRecordedData["xAxis"] = [];
+      totalDetailedRecordedData["yAxis"] = [];
+      totalDetailedRecordedData["zAxis"] = [];
+    }
+    print(csvDetailData);
 
     String csv = type == "JERK" ? const ListToCsvConverter().convert(csvJerkData) : const ListToCsvConverter().convert(csvDetailData);
     final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
+
+    await Directory('${directory.path}/' + tripId ).create()
+    // The created directory is returned as a Future.
+        .then((Directory dir) async {
+      savingCSVDirectory = dir.path;
+    });
+
     final File file =
     type == "JERK" ?
-    File('${directory.path}/' + tripId + '/jerkReport_' + tripId + '_' + startTime + "_" + '$numberOfJerkCSVFiles' + ".txt") :
-    File('${directory.path}/' + tripId + '/detailReport_' + tripId + '_' + startTime + "_" + '$numberOfDetailCSVFiles' + ".txt");
+    File('$savingCSVDirectory/jerkReport_' + tripId + '_' + startTime.split(":")[0] + "_" + '$numberOfJerkCSVFiles' + ".csv") :
+    File('$savingCSVDirectory/detailReport_' + tripId + '_' +  startTime.split(":")[0] + "_" + '$numberOfDetailCSVFiles' + ".csv");
 
     await file.writeAsString(csv);
   }
@@ -674,21 +709,22 @@ class _MyHomePageState extends State<MyHomePage> {
       currentGPSTimeInUTC = DateTime.now().toUtc().toString();
     });
   }
-
-  downloadJerkReportLocally(String report, String tripId, String startTime) async {
-    final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
-    final File file = File('${directory.path}/jerkReport_' + tripId + '_' + startTime + ".txt");
-    await file.writeAsString('');
-    await file.writeAsString(report);
-  }
-
-
-  downloadDetailedReportLocally(String report, String tripId, String startTime) async {
-    final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
-    final File file = File('${directory.path}/detailedReport_' + tripId + '_' + startTime + ".txt");
-    await file.writeAsString('');
-    await file.writeAsString(report);
-  }
+//
+//  downloadJerkReportLocally(String report, String tripId, String startTime) async {
+//    final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
+//    final File file = File('${directory.path}/jerkReport_' + tripId + '_' + startTime + ".txt");
+//    await file.writeAsString('');
+//    await file.writeAsString(report);
+//  }
+//
+//
+//  downloadDetailedReportLocally(String report, String tripId, String startTime) async {
+//    print("hereeeeeeeeeee");
+//    final directory = (await getExternalStorageDirectories(type: StorageDirectory.downloads)).first;
+//    final File file = File('${directory.path}/detailedReport_' + tripId + '_' + startTime + ".txt");
+//    await file.writeAsString('');
+//    await file.writeAsString(report);
+//  }
 
   getCurrentLocationSMSPermission() async {
 
