@@ -143,8 +143,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
 
 //                save recorded data in csv
-                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
-                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
+//                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
+//                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
 
 //              reset for new journey
                 jerkCounter = 0;
@@ -200,8 +200,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
                 downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
 
-                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
-                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
+//                writeCSVFile( "JERK" ,numberOfJerkCSVFiles, tripId, startTime);
+//                writeCSVFile( "DETAIL", numberOfDetailCSVFiles, tripId, startTime);
 
               }
             });
@@ -334,40 +334,46 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget chart(SensorEvent streamedSensorData) {
+    time++;
+    print(time);
     currentTimeInUTC = DateTime.now().toUtc().toString();
-    return SfCartesianChart(
-        series: <LineSeries<LiveData, int>>[
-          LineSeries<LiveData, int>(
-            dataSource: updateDataSource( "X-Axis", streamedSensorData.data[0]),
-            color: const Color.fromRGBO(
-                192, 108, 132, 1),
-            xValueMapper: (LiveData sales, _) =>
-            sales.time,
-            yValueMapper: (LiveData sales, _) =>
-            sales.speed,
-          ),
-          LineSeries<LiveData, int>(
-              dataSource: updateDataSource( "Y-Axis", streamedSensorData.data[1]),
-              color: const Color.fromRGBO(
-                  192, 108, 132, 1),
-              xValueMapper: (LiveData sales, _) => sales.time,
-              yValueMapper: (LiveData sales, _) => sales.speed,
-              pointColorMapper: (_, color) => Colors.green
-          ),
-          LineSeries<LiveData, int>(
-              dataSource: updateDataSource("Z-Axis", streamedSensorData.data[2],),
-              color: const Color.fromRGBO(192, 108, 132, 1),
-              xValueMapper: (LiveData sales, _) => sales.time,
-              yValueMapper: (LiveData sales, _) => sales.speed,
-              pointColorMapper: (_, color) => Colors.blue
-          )
-        ],
-        primaryXAxis: NumericAxis(
-            majorGridLines: MajorGridLines(width: 0),
-            edgeLabelPlacement: EdgeLabelPlacement.shift,
-            interval: 3,
-            title: AxisTitle(text: 'Time (milliseconds)')),
-        primaryYAxis: NumericAxis(axisLine: const AxisLine(width: 0), interval: 10.0, visibleMinimum: -10, majorTickLines: const MajorTickLines(size: 0), title: AxisTitle(text: 'Jerk (g)')));
+    updateDataSource( "X-Axis", streamedSensorData.data[0]);
+    updateDataSource( "Y-Axis", streamedSensorData.data[1]);
+    updateDataSource("Z-Axis", streamedSensorData.data[2],);
+    return Container();
+//    return SfCartesianChart(
+//        series: <LineSeries<LiveData, int>>[
+//          LineSeries<LiveData, int>(
+//            dataSource: updateDataSource( "X-Axis", streamedSensorData.data[0]),
+//            color: const Color.fromRGBO(
+//                192, 108, 132, 1),
+//            xValueMapper: (LiveData sales, _) =>
+//            sales.time,
+//            yValueMapper: (LiveData sales, _) =>
+//            sales.speed,
+//          ),
+//          LineSeries<LiveData, int>(
+//              dataSource: updateDataSource( "Y-Axis", streamedSensorData.data[1]),
+//              color: const Color.fromRGBO(
+//                  192, 108, 132, 1),
+//              xValueMapper: (LiveData sales, _) => sales.time,
+//              yValueMapper: (LiveData sales, _) => sales.speed,
+//              pointColorMapper: (_, color) => Colors.green
+//          ),
+//          LineSeries<LiveData, int>(
+//              dataSource: updateDataSource("Z-Axis", streamedSensorData.data[2],),
+//              color: const Color.fromRGBO(192, 108, 132, 1),
+//              xValueMapper: (LiveData sales, _) => sales.time,
+//              yValueMapper: (LiveData sales, _) => sales.speed,
+//              pointColorMapper: (_, color) => Colors.blue
+//          )
+//        ],
+//        primaryXAxis: NumericAxis(
+//            majorGridLines: MajorGridLines(width: 0),
+//            edgeLabelPlacement: EdgeLabelPlacement.shift,
+//            interval: 3,
+//            title: AxisTitle(text: 'Time (milliseconds)')),
+//        primaryYAxis: NumericAxis(axisLine: const AxisLine(width: 0), interval: 10.0, visibleMinimum: -10, majorTickLines: const MajorTickLines(size: 0), title: AxisTitle(text: 'Jerk (g)')));
   }
 
   Widget thresholdDialog(String axis){
@@ -410,47 +416,47 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<LiveData> updateDataSource(String axis, double value) {
     if(axis == "X-Axis") {
-      xChartData.add(LiveData(time = time+incrementTimeValue, value));
-      if (xChartData.length > 15) {
-        xChartData.removeAt(0);
-      }
-      if (value > xAxisThreshold) {
-        xAxisJerk++;
-        jerkCounter++;
-
-        var xAxisJerkRecord = {
-          "jerkAxis": "X",
-          "jerkId": xAxisJerk,
-          "jerkValue": value,
-          "jerkTime": time,
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "jerkThreshold": xAxisThreshold,
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        };
-
-        totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
-        csvJerkData.add(["xAxis", xAxisJerkRecord]);
-
-        sendMail({
-          "jerkAxis": "X",
-          "jerkId": xAxisJerk.toString(),
-          "jerkValue": value.toString(),
-          "jerkTime": time.toString(),
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "modelName": totalJerkRecordedData["modelName"].toString(),
-          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-          "tripId": tripId.toString(),
-          "jerkThreshold": xAxisThreshold.toString(),
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        });
-
-        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-      }
+//      xChartData.add(LiveData(time = time+incrementTimeValue, value));
+//      if (xChartData.length > 15) {
+//        xChartData.removeAt(0);
+//      }
+//      if (value > xAxisThreshold) {
+//        xAxisJerk++;
+//        jerkCounter++;
+//
+//        var xAxisJerkRecord = {
+//          "jerkAxis": "X",
+//          "jerkId": xAxisJerk,
+//          "jerkValue": value,
+//          "jerkTime": time,
+//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+//          "jerkCurrentTimeInUTC": currentTimeInUTC,
+//          "jerkThreshold": xAxisThreshold,
+//          "latitude": currentCoordinates.latitude.toString(),
+//          "longitude": currentCoordinates.longitude.toString(),
+//        };
+//
+//        totalJerkRecordedData["xAxis"].add(xAxisJerkRecord);
+//        csvJerkData.add(["xAxis", xAxisJerkRecord]);
+//
+//        sendMail({
+//          "jerkAxis": "X",
+//          "jerkId": xAxisJerk.toString(),
+//          "jerkValue": value.toString(),
+//          "jerkTime": time.toString(),
+//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+//          "jerkCurrentTimeInUTC": currentTimeInUTC,
+//          "modelName": totalJerkRecordedData["modelName"].toString(),
+//          "deviceId": totalJerkRecordedData["deviceId"].toString(),
+//          "tripId": tripId.toString(),
+//          "jerkThreshold": xAxisThreshold.toString(),
+//          "latitude": currentCoordinates.latitude.toString(),
+//          "longitude": currentCoordinates.longitude.toString(),
+//        });
+//
+//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+//        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+//      }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
@@ -467,56 +473,55 @@ class _MyHomePageState extends State<MyHomePage> {
 
 //      saving every reading from sensor
       totalDetailedRecordedData["xAxis"].add(detailData);
-      csvDetailData.add(["xAxis", detailData]);
-
+//      csvDetailData.add(["xAxis", detailData]);
 
       if(time % 6000 == 0){
         downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
-        writeCSVFile("DETAIL", numberOfJerkCSVFiles, tripId, startTime);
+//        writeCSVFile("DETAIL", numberOfJerkCSVFiles, tripId, startTime);
       }
 
       return xChartData;
 
     } else if(axis == "Y-Axis") {
-      yChartData.add(LiveData(time = time+incrementTimeValue, value));
-      if (yChartData.length > 15) {
-        yChartData.removeAt(0);
-      }
-      if (value > yAxisThreshold) {
-        yAxisJerk++;
-        jerkCounter++;
-
-        var yAxisJerkData = {
-          "jerkId": yAxisJerk,
-          "jerkAxis": "Y",
-          "jerkThreshold": yAxisThreshold,
-          "jerkValue": value,
-          "jerkTime": time,
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        };
-
-        totalJerkRecordedData["yAxis"].add(yAxisJerkData);
-        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
-
-        sendMail({
-          "jerkId": yAxisJerk.toString(),
-          "jerkAxis": "Y",
-          "jerkThreshold": yAxisThreshold.toString(),
-          "jerkValue": value.toString(),
-          "jerkTime": time.toString(),
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "modelName": totalJerkRecordedData["modelName"].toString(),
-          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-          "tripId": totalJerkRecordedData["tripId"].toString(),
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        });
-        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-      }
+//      yChartData.add(LiveData(time = time+incrementTimeValue, value));
+//      if (yChartData.length > 15) {
+//        yChartData.removeAt(0);
+//      }
+//      if (value > yAxisThreshold) {
+//        yAxisJerk++;
+//        jerkCounter++;
+//
+//        var yAxisJerkData = {
+//          "jerkId": yAxisJerk,
+//          "jerkAxis": "Y",
+//          "jerkThreshold": yAxisThreshold,
+//          "jerkValue": value,
+//          "jerkTime": time,
+//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+//          "jerkCurrentTimeInUTC": currentTimeInUTC,
+//          "latitude": currentCoordinates.latitude.toString(),
+//          "longitude": currentCoordinates.longitude.toString(),
+//        };
+//
+//        totalJerkRecordedData["yAxis"].add(yAxisJerkData);
+//        writeCSVFile("JERK", numberOfJerkCSVFiles, tripId, startTime);
+//
+//        sendMail({
+//          "jerkId": yAxisJerk.toString(),
+//          "jerkAxis": "Y",
+//          "jerkThreshold": yAxisThreshold.toString(),
+//          "jerkValue": value.toString(),
+//          "jerkTime": time.toString(),
+//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+//          "jerkCurrentTimeInUTC": currentTimeInUTC,
+//          "modelName": totalJerkRecordedData["modelName"].toString(),
+//          "deviceId": totalJerkRecordedData["deviceId"].toString(),
+//          "tripId": totalJerkRecordedData["tripId"].toString(),
+//          "latitude": currentCoordinates.latitude.toString(),
+//          "longitude": currentCoordinates.longitude.toString(),
+//        });
+//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+//      }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
@@ -536,42 +541,42 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       return yChartData;
     } else {
-      zChartData.add(LiveData(time = time+incrementTimeValue, value));
-      if (zChartData.length > 15) {
-        zChartData.removeAt(0);
-      }
-      if (value > zAxisThreshold) {
-        zAxisJerk++;
-        jerkCounter++;
-        totalJerkRecordedData["zAxis"].add({
-          "jerkId": zAxisJerk,
-          "jerkAxis": "Z",
-          "jerkValue": value,
-          "jerkTime": time,
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "jerkThreshold": zAxisThreshold,
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        });
-
-        sendMail({
-          "jerkId": zAxisJerk.toString(),
-          "jerkAxis": "Z",
-          "jerkValue": value.toString(),
-          "jerkTime": time.toString(),
-          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
-          "jerkCurrentTimeInUTC": currentTimeInUTC,
-          "modelName": totalJerkRecordedData["modelName"].toString(),
-          "deviceId": totalJerkRecordedData["deviceId"].toString(),
-          "tripId": tripId.toString(),
-          "jerkThreshold": zAxisThreshold.toString(),
-          "latitude": currentCoordinates.latitude.toString(),
-          "longitude": currentCoordinates.longitude.toString(),
-        });
-
-        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
-      }
+//      zChartData.add(LiveData(time = time+incrementTimeValue, value));
+//      if (zChartData.length > 15) {
+//        zChartData.removeAt(0);
+//      }
+//      if (value > zAxisThreshold) {
+//        zAxisJerk++;
+//        jerkCounter++;
+//        totalJerkRecordedData["zAxis"].add({
+//          "jerkId": zAxisJerk,
+//          "jerkAxis": "Z",
+//          "jerkValue": value,
+//          "jerkTime": time,
+//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+//          "jerkCurrentTimeInUTC": currentTimeInUTC,
+//          "jerkThreshold": zAxisThreshold,
+//          "latitude": currentCoordinates.latitude.toString(),
+//          "longitude": currentCoordinates.longitude.toString(),
+//        });
+//
+//        sendMail({
+//          "jerkId": zAxisJerk.toString(),
+//          "jerkAxis": "Z",
+//          "jerkValue": value.toString(),
+//          "jerkTime": time.toString(),
+//          "jerkGPSTimeInUTC": currentGPSTimeInUTC,
+//          "jerkCurrentTimeInUTC": currentTimeInUTC,
+//          "modelName": totalJerkRecordedData["modelName"].toString(),
+//          "deviceId": totalJerkRecordedData["deviceId"].toString(),
+//          "tripId": tripId.toString(),
+//          "jerkThreshold": zAxisThreshold.toString(),
+//          "latitude": currentCoordinates.latitude.toString(),
+//          "longitude": currentCoordinates.longitude.toString(),
+//        });
+//
+//        downloadJerkReportLocally(jsonEncode(totalJerkRecordedData), tripId, startTime);
+//      }
       totalJerkRecordedData["totalJerks"] = jerkCounter;
       totalJerkRecordedData["totalTime"] = time;
 
@@ -583,7 +588,8 @@ class _MyHomePageState extends State<MyHomePage> {
         "jerkCurrentTimeInUTC": currentTimeInUTC,
         "jerkThreshold": zAxisThreshold,
         "latitude": currentCoordinates.latitude.toString(),
-        "longitude": currentCoordinates.longitude.toString(),        });
+        "longitude": currentCoordinates.longitude.toString(),
+      });
 
       if(time % 6000 == 0){
         downloadDetailedReportLocally(jsonEncode(totalDetailedRecordedData), tripId, startTime);
